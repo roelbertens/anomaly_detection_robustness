@@ -1,0 +1,6 @@
+name: if
+dependencies:
+  - pip
+  - python==3.7.0
+  - setuptools==42.0.2
+  - jupyter==1.0.0
