@@ -1,7 +1,7 @@
 import itertools
 import math
 
-from if_robustness.graph import Graph, Node
+from anomaly_detection_robustness.graph import Graph, Node
 
 
 def test_graph():

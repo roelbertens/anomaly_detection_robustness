@@ -1,8 +1,9 @@
-# Isolation Forest Robustness
+# Anomaly Detection Robustness
 
 With this package you can generate categorical data that follows the conditional probabilities from a generated 
 probability graph. Afterwards anomalies can be inserted in the data. Finally, different scenarios can be simulated
-to study the robustness of Isolation Forest to different settings, e.g. number of features. 
+to study the robustness of an anomaly detection model (for now only Isolation Forest) to different settings, e.g. number
+of features. 
 
 ## Getting started
 
