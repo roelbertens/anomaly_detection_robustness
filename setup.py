@@ -9,6 +9,7 @@ install_requires = [
     'scikit-learn',
     'pandas',
     'matplotlib',
+    'networkx',
 ]
 tests_require = ['pytest']
 
@@ -17,7 +18,7 @@ setuptools.setup(
     author="Roel Bertens",
     author_email="roelbertens@godatadriven.com",
     description="Investigate the robustness of anomaly detection models",
-    license="",
+    license="MIT License",
     packages=setuptools.find_packages(exclude=['data', 'notebooks', 'tests']),
     install_requires=install_requires,
     test_suite="tests",

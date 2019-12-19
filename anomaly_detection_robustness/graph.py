@@ -114,8 +114,9 @@ class Graph:
     graph.score()
     """
 
-    def __init__(self, nodes, nr_externals=0, nr_chains=0, chain_length=10, debug=True):
-        self.contamination = None
+    def __init__(self, nodes, contamination=.005, nr_externals=0, nr_chains=0, chain_length=10,
+                 debug=False):
+        self.contamination = contamination
         self.debug = debug
         self.number_observations = None
         self.X = None
@@ -136,37 +137,36 @@ class Graph:
         self.X = pd.DataFrame(data=[[n.sample_value() for n in self.all_nodes] for _ in range(number_observations)],
                               columns=[n.name for n in self.all_nodes])
 
-    def label(self, contamination=.005, nr_features_to_change=1, static_anomaly_value=False):
+    def label(self, nr_features_to_change=1, static_anomaly_value=False):
         """Put anomalies in the data and label the data accordingly"""
 
-        self.contamination = contamination
         self.y = np.zeros(self.number_observations)
-
         for _ in range(int(self.number_observations * self.contamination)):
-            observation_id = random.randint(0, self.number_observations)
+            observation_id = random.randint(0, self.number_observations - 1)
             self.y[observation_id] = 1
             for _ in range(nr_features_to_change):
                 random_feature_id = random.randint(0, len(self.nodes) - 1)
                 if static_anomaly_value:
-                    self.X.iloc[observation_id, random_feature_id] = 9999999
+                    self.X.iloc[observation_id, random_feature_id] = 260
                 else:
                     # set a unique feature value
                     self.X.iloc[observation_id, random_feature_id] = random.randint(10e5, 10e10)
 
-    def score(self):
+    def score(self, model=None):
         """Train an Isolation Forest to identify the anomalies and return the result"""
 
         if self.y is None:
             print('Error: first label the data.')
             return
 
-        model = IsolationForest(
-            n_estimators=400,
-            max_samples='auto',
-            contamination=self.contamination,
-            random_state=42,
-            n_jobs=-1,
-        )
+        if model is None:
+            model = IsolationForest(
+                n_estimators=100,
+                max_samples='auto',
+                contamination=self.contamination,
+                random_state=42,
+                n_jobs=-1)
+
         model.fit(self.X)
         predictions = model.predict(self.X)
         y_pred = pd.Series(data=[1 if x == -1 else 0 for x in predictions])
@@ -178,9 +178,10 @@ class Graph:
             print('Nr. of features: ', self.X.shape[1])
             print('Labels:\n', y_pred.value_counts())
             print('\nConfusion matrix\n', confusion_matrix(self.y, y_pred))
-            print('\n ROC AUC score', round(roc_auc_score(self.y, y_score), 2))
+            # print('\n ROC AUC score', round(roc_auc_score(self.y, y_score), 2))
             # print('\nClassification report\n', classification_report(self.y, y_pred))
-        return self.plot_roc(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
+            self.plot_roc(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
+        return roc_auc
 
 
     @staticmethod
@@ -196,4 +197,3 @@ class Graph:
         plt.ylabel('True Positive Rate')
         plt.title('Receiver operating characteristic example')
         plt.legend(loc="lower right")
-        return plt.gca()
