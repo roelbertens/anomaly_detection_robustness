@@ -1,3 +1,4 @@
+import itertools
 import random
 
 import matplotlib.pyplot as plt
@@ -6,7 +7,6 @@ import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import auc
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
 
 
@@ -33,10 +33,11 @@ class Node:
     def set_conditionals(self):
         """Set random conditional probabilities"""
 
-        self.conditionals = [
-            np.random.rand(*[p.cardinality for p in self.parents])
-            for _ in range(self.cardinality - 1)
-        ]
+        self.conditionals = np.random.rand(*[p.cardinality for p in self.parents], self.cardinality)
+        # divide probability based on random numbers
+        for i in itertools.product(*[range(p.cardinality) for p in self.parents]):
+            self.conditionals[i] = pd.Series(self.conditionals[i]).pipe(lambda x: x / sum(x)).cumsum()
+
         if self.debug:
             print(self.name, 'Conditionals:', self.conditionals)
 
@@ -45,16 +46,16 @@ class Node:
 
         parent_values = tuple(p.feature_value for p in self.parents)
         if None in parent_values:
-            print(self.name, ' Error: not all parent values are set.')
+            print(self.name, 'Error: not all parent values are set.')
 
-        self.feature_value = self.cardinality - 1
-        for feature_value, conditionals in enumerate(self.conditionals):
-            if not self.parents:
-                probability_threshold = conditionals
-            else:
-                probability_threshold = conditionals[parent_values]
+        if not self.parents:
+            probability_thresholds = self.conditionals
+        else:
+            probability_thresholds = self.conditionals[parent_values]
 
-            if random.random() < probability_threshold:
+        random_value = random.random()
+        for feature_value, probability_threshold in enumerate(probability_thresholds):
+            if random_value <= probability_threshold:
                 self.feature_value = feature_value
                 break
         return self.feature_value
@@ -62,16 +63,10 @@ class Node:
     def get_probability(self, own_value, parent_values: tuple = ()):
         """Get the expected probability for an observation"""
 
-        probability_left = 1
-        for feature_value, conditionals in enumerate(self.conditionals):
-            if not self.parents:
-                conditional = conditionals
-            else:
-                conditional = conditionals[parent_values]
-            if feature_value == own_value:
-                return probability_left * conditional
-            probability_left -= probability_left * conditional
-        return probability_left
+        if own_value == 0:
+            return self.conditionals[parent_values][own_value]
+        else:
+            return self.conditionals[parent_values][own_value] - self.conditionals[parent_values][own_value-1]
 
     def __repr__(self):
         return f'{self.name} ({self.cardinality})'
@@ -126,7 +121,7 @@ class Graph:
         for _ in range(nr_chains):
             for n in Chain(length=chain_length).nodes:
                 self.chain_nodes.append(n)
-        self.external_nodes = [Node(random.randint(0, 10), f'external {i}') for i in range(nr_externals)]
+        self.external_nodes = [Node(random.randint(2, 10), f'external {i}') for i in range(nr_externals)]
         self.nodes = nodes
         self.all_nodes = self.nodes + self.external_nodes + self.chain_nodes
         for n in self.all_nodes:
