@@ -14,7 +14,7 @@ def test_graph():
     c1.add_parent(r2)
     nodes = [r1, r2, c1]
     graph = Graph(nodes=nodes)
-    graph.sample(100_000)
+    graph.label(number_observations=100_000, nr_features_to_change=0)
 
     observation_counts = graph.X.groupby(list(graph.X.columns)).size()
     observation_probabilities = observation_counts / observation_counts.groupby(['root 1', 'root 2']).transform('sum')

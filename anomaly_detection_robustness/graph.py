@@ -132,25 +132,30 @@ class Graph:
         for n in self.all_nodes:
             n.set_conditionals()
 
-    def sample(self, number_observations=10_000):
-        self.number_observations = number_observations
-        self.X = pd.DataFrame(data=[[n.sample_value() for n in self.all_nodes] for _ in range(number_observations)],
+    def sample(self):
+        self.X = pd.DataFrame(data=[[n.sample_value() for n in self.all_nodes]
+                                    for _ in range(self.number_observations)],
                               columns=[n.name for n in self.all_nodes])
 
-    def label(self, nr_features_to_change=1, static_anomaly_value=False):
+    def label(self, number_observations=10_000, nr_features_to_change=0, noise=10):
         """Put anomalies in the data and label the data accordingly"""
 
+        if nr_features_to_change > len(self.nodes):
+            print(f'Error: not possible to change {nr_features_to_change} out of {len(self.nodes)} features')
+            return
+
+        self.number_observations = number_observations
+        self.sample()
         self.y = np.zeros(self.number_observations)
         for _ in range(int(self.number_observations * self.contamination)):
             observation_id = random.randint(0, self.number_observations - 1)
             self.y[observation_id] = 1
+            feature_set = set(range(len(self.nodes)))
             for _ in range(nr_features_to_change):
-                random_feature_id = random.randint(0, len(self.nodes) - 1)
-                if static_anomaly_value:
-                    self.X.iloc[observation_id, random_feature_id] = 260
-                else:
-                    # set a unique feature value
-                    self.X.iloc[observation_id, random_feature_id] = random.randint(10e5, 10e10)
+                random_feature_id = random.choice(tuple(feature_set))
+                feature_set -= {random_feature_id}
+                self.X.iloc[observation_id, random_feature_id] = (
+                    self.nodes[random_feature_id].cardinality + random.randint(0, noise))
 
     def score(self, model=None):
         """Train an Isolation Forest to identify the anomalies and return the result"""
