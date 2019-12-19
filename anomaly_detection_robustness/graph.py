@@ -181,7 +181,7 @@ class Graph:
 
         if self.debug:
             print('Nr. of features: ', self.X.shape[1])
-            print('Labels:\n', y_pred.value_counts())
+            print('Labels:\n', pd.Series(self.y).value_counts())
             print('\nConfusion matrix\n', confusion_matrix(self.y, y_pred))
             # print('\n ROC AUC score', round(roc_auc_score(self.y, y_score), 2))
             # print('\nClassification report\n', classification_report(self.y, y_pred))
