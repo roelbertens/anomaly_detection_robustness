@@ -1,5 +1,6 @@
 import itertools
 import random
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -152,7 +153,7 @@ class Graph:
                 self.X.iloc[observation_id, random_feature_id] = (
                     self.nodes[random_feature_id].cardinality + random.randint(0, noise))
 
-    def score(self, model=None):
+    def score(self, model=None, get_fit_predict_time=False):
         """Train an Isolation Forest to identify the anomalies and return the result"""
 
         if self.y is None:
@@ -167,8 +168,11 @@ class Graph:
                 random_state=42,
                 n_jobs=-1)
 
+        start_time = time.process_time()
         model.fit(self.X)
         predictions = model.predict(self.X)
+        fit_predict_time = time.process_time() - start_time
+
         y_pred = pd.Series(data=[1 if x == -1 else 0 for x in predictions])
         y_score = pd.Series(data=model.decision_function(self.X)).multiply(-1)
         fpr, tpr, thresholds = roc_curve(self.y, y_score)
@@ -178,11 +182,11 @@ class Graph:
             print('Nr. of features: ', self.X.shape[1])
             print('Labels:\n', pd.Series(self.y).value_counts())
             print('\nConfusion matrix\n', confusion_matrix(self.y, y_pred))
-            # print('\n ROC AUC score', round(roc_auc_score(self.y, y_score), 2))
-            # print('\nClassification report\n', classification_report(self.y, y_pred))
             self.plot_roc(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
-        return roc_auc
-
+        if get_fit_predict_time:
+            return roc_auc, fit_predict_time
+        else:
+            return roc_auc
 
     @staticmethod
     def plot_roc(fpr, tpr, roc_auc):
