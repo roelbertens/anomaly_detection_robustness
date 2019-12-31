@@ -8,6 +8,6 @@ of features.
 ## Getting started
 
 Create a python 3 environment with jupyter using `conda env create -f environment.yml` and install this package using 
-`pip install .`.
+`pip install .` from the root directory project.
 
 Open the example notebook to play around. 
